@@ -80,7 +80,6 @@ def IncrementalOTA_InstallEnd(info):
 
 def FsSizeFix(info):
   info.script.Print("Fixing fs_size in crypto footer...")
-  info.script.AppendExtra('''assert(samsung.fs_size_fix());''')
 
 def WriteBootloader(info, bootloader_img):
   common.ZipWriteStr(info.output_zip, "bootloader.img", bootloader_img)
