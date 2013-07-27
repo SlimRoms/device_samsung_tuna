@@ -49,6 +49,12 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
 	power.tuna
 
+# Support for Browser's saved page feature. This allows
+# for pages saved on previous versions of the OS to be
+# viewed on the current OS.
+PRODUCT_PACKAGES += \
+	libskia_legacy
+
 # Audio
 PRODUCT_PACKAGES += \
 	audio.primary.tuna \
@@ -96,8 +102,6 @@ PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
 
 # NFC
 PRODUCT_PACKAGES += \
-        libnfc \
-        libnfc_jni \
         Nfc \
         Tag
 
