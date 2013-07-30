@@ -64,6 +64,9 @@ TARGET_RECOVERY_UI_LIB := librecovery_ui_tuna
 TARGET_RECOVERY_UPDATER_LIBS += librecovery_updater_tuna
 TARGET_RELEASETOOLS_EXTENSIONS := device/samsung/tuna
 
+# use the new recovery.fstab format
+RECOVERY_FSTAB_VERSION = 2
+
 TARGET_RECOVERY_FSTAB = device/samsung/tuna/fstab.tuna
 TARGET_USERIMAGES_USE_EXT4 := true
 BOARD_SYSTEMIMAGE_PARTITION_SIZE := 685768704
