@@ -1,2 +1,0 @@
-type powervr_device, dev_type, mlstrustedobject;
-type led_device, dev_type;

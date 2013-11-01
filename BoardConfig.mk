@@ -100,7 +100,4 @@ BOARD_SEPOLICY_DIRS := \
 
 BOARD_SEPOLICY_UNION := \
         genfs_contexts \
-        file_contexts \
-        device.te \
-        domain.te \
-        system.te
+        file_contexts
