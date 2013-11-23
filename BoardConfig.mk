@@ -38,7 +38,7 @@ BOARD_KERNEL_BASE := 0x80000000
 # BOARD_KERNEL_CMDLINE :=
 
 # Define kernel config for inline building
-TARGET_KERNEL_CONFIG := tuna_defconfig
+TARGET_KERNEL_CONFIG := slim_tuna_defconfig
 TARGET_KERNEL_SOURCE := kernel/samsung/tuna
 
 TARGET_KERNEL_CUSTOM_TOOLCHAIN := linaro/bin/arm-linux-gnueabihf-
