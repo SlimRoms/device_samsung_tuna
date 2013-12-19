@@ -39,6 +39,10 @@ PRODUCT_PACKAGES := \
 	charger \
 	charger_res_images
 
+# Torch
+PRODUCT_PACKAGES += \
+    Torch
+
 PRODUCT_PACKAGES += \
 	sensors.tuna \
 	libinvensense_mpl
