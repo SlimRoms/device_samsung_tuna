@@ -261,7 +261,7 @@
 #define VOICE_CALL_HEADSET_MIC_VOLUME 8
 
 /* use-case specific output volumes */
-#define NORMAL_SPEAKER_VOLUME_TORO 7
+#define NORMAL_SPEAKER_VOLUME_TORO 9
 #define NORMAL_SPEAKER_VOLUME_MAGURO 7
 #define NORMAL_HEADSET_VOLUME_TORO -12
 #define NORMAL_HEADSET_VOLUME_MAGURO -12
@@ -786,7 +786,7 @@ static int is_device_toro(void)
     property_get(PRODUCT_DEVICE_PROPERTY, property, PRODUCT_DEVICE_TORO);
 
     /* return true if the property matches the given value */
-    return strcmp(property, PRODUCT_DEVICE_TORO) == 0;
+    return strcmp(property, PRODUCT_DEVICE_TORO, 4) == 0;
 }
 
 /* The enable flag when 0 makes the assumption that enums are disabled by
