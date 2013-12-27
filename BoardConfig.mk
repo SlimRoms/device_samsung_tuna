@@ -104,9 +104,9 @@ BOARD_HAL_STATIC_LIBRARIES := libdumpstate.tuna
 
 BOARD_USES_SECURE_SERVICES := true
 
-BOARD_SEPOLICY_DIRS := \
+BOARD_SEPOLICY_DIRS += \
         device/samsung/tuna/sepolicy
 
-BOARD_SEPOLICY_UNION := \
+BOARD_SEPOLICY_UNION += \
         genfs_contexts \
         file_contexts
