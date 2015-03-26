@@ -74,6 +74,10 @@ BOARD_CREATE_TUNA_HDCP_KEYS_SYMLINK := true
 #BOARD_USES_OVERLAY := true
 
 
+# We don't support cursor layers, which when attempting to use them,
+# results in no cursors (mouse or otherwise) displayed on the screen.
+TARGET_DISABLE_CURSOR_LAYER := true
+
 # libwvm needs this, among other things
 COMMON_GLOBAL_CFLAGS += -DNEEDS_VECTORIMPL_SYMBOLS
 
