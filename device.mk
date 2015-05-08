@@ -19,13 +19,9 @@
 #
 # Everything in this directory will become public
 
-ifeq ($(TARGET_PREBUILT_KERNEL),)
-LOCAL_KERNEL := device/samsung/tuna/kernel
-else
-LOCAL_KERNEL := $(TARGET_PREBUILT_KERNEL)
-endif
 
 DEVICE_PACKAGE_OVERLAYS := device/samsung/tuna/overlay
+
 
 # This device is xhdpi.  However the platform doesn't
 # currently contain all of the bitmaps at xhdpi density so
@@ -34,23 +30,13 @@ DEVICE_PACKAGE_OVERLAYS := device/samsung/tuna/overlay
 PRODUCT_AAPT_CONFIG := normal hdpi xhdpi
 PRODUCT_AAPT_PREF_CONFIG := xhdpi
 
-PRODUCT_PACKAGES := \
+PRODUCT_PACKAGES = \
+	camera.tuna \
 	lights.tuna \
-	charger \
-	charger_res_images
-
-# Torch
-PRODUCT_PACKAGES += \
-    Torch
-
-PRODUCT_PACKAGES += \
+	charger_res_images \
 	sensors.tuna \
-	libinvensense_mpl
-
-PRODUCT_PACKAGES += \
-	nfc.tuna
-
-PRODUCT_PACKAGES += \
+	libinvensense_mpl \
+	nfc.tuna \
 	power.tuna
 
 # Support for Browser's saved page feature. This allows
@@ -63,11 +49,21 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
 	audio.primary.tuna \
 	audio.a2dp.default \
-	audio.usb.default
+	audio.usb.default \
+	audio.r_submix.default
 
 PRODUCT_COPY_FILES += \
 	device/samsung/tuna/audio/audio_policy.conf:system/etc/audio_policy.conf \
-	device/samsung/tuna/audio_effects.conf:system/vendor/etc/audio_effects.conf
+	device/samsung/tuna/audio_effects.conf:system/vendor/etc/audio_effects.conf \
+	frameworks/av/media/libstagefright/data/media_codecs_google_audio.xml:system/etc/media_codecs_google_audio.xml \
+	frameworks/av/media/libstagefright/data/media_codecs_google_telephony.xml:system/etc/media_codecs_google_telephony.xml \
+	frameworks/av/media/libstagefright/data/media_codecs_google_video.xml:system/etc/media_codecs_google_video.xml
+
+# Default to the Speex resampler, if it exists.
+# - This allows for playback of just about any sample rate as the Speex resampler doesn't
+#   have the in <= out*2 restriction, and is of a higher quality than the default resampler.
+PRODUCT_PROPERTY_OVERRIDES := \
+	af.resampler.quality=8
 
 PRODUCT_PACKAGES += \
 	tuna_hdcp_keys
@@ -76,7 +72,6 @@ PRODUCT_PACKAGES += \
 #	keystore.tuna
 
 PRODUCT_COPY_FILES += \
-	$(LOCAL_KERNEL):kernel \
 	device/samsung/tuna/init.tuna.rc:root/init.tuna.rc \
 	device/samsung/tuna/init.tuna.usb.rc:root/init.tuna.usb.rc \
 	device/samsung/tuna/fstab.tuna:root/fstab.tuna \
@@ -93,7 +88,7 @@ endif
 PRODUCT_COPY_FILES += \
 	device/samsung/tuna/bcmdhd.cal:system/etc/wifi/bcmdhd.cal
 
-PRODUCT_PROPERTY_OVERRIDES := \
+PRODUCT_PROPERTY_OVERRIDES += \
 	wifi.interface=wlan0
 
 # Enable AAC 5.1 output
@@ -108,6 +103,9 @@ PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
 PRODUCT_PACKAGES += \
         Nfc \
         Tag
+
+PRODUCT_PROPERTY_OVERRIDES += \
+	ro.ksm.default=1
 
 # LED brightness property
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -126,12 +124,12 @@ PRODUCT_PACKAGES += \
 
 # Key maps
 PRODUCT_COPY_FILES += \
-	device/samsung/tuna/tuna-gpio-keypad.kl:system/usr/keylayout/tuna-gpio-keypad.kl \
-	device/samsung/tuna/tuna-gpio-keypad.kcm:system/usr/keychars/tuna-gpio-keypad.kcm \
-	device/samsung/tuna/sec_jack.kl:system/usr/keylayout/sec_jack.kl \
-	device/samsung/tuna/sec_jack.kcm:system/usr/keychars/sec_jack.kcm \
-	device/samsung/tuna/sii9234_rcp.kl:system/usr/keylayout/sii9234_rcp.kl \
-	device/samsung/tuna/sii9234_rcp.kcm:system/usr/keychars/sii9234_rcp.kcm
+	device/samsung/tuna/keymaps/tuna-gpio-keypad.kl:system/usr/keylayout/tuna-gpio-keypad.kl \
+	device/samsung/tuna/keymaps/tuna-gpio-keypad.kcm:system/usr/keychars/tuna-gpio-keypad.kcm \
+	device/samsung/tuna/keymaps/sec_jack.kl:system/usr/keylayout/sec_jack.kl \
+	device/samsung/tuna/keymaps/sec_jack.kcm:system/usr/keychars/sec_jack.kcm \
+	device/samsung/tuna/keymaps/sii9234_rcp.kl:system/usr/keylayout/sii9234_rcp.kl \
+	device/samsung/tuna/keymaps/sii9234_rcp.kcm:system/usr/keychars/sii9234_rcp.kcm
 
 # Input device calibration files
 PRODUCT_COPY_FILES += \
@@ -159,16 +157,16 @@ PRODUCT_COPY_FILES += \
 
 # Melfas touchscreen firmware
 PRODUCT_COPY_FILES += \
-    device/samsung/tuna/mms144_ts_rev31.fw:system/vendor/firmware/mms144_ts_rev31.fw \
-    device/samsung/tuna/mms144_ts_rev32.fw:system/vendor/firmware/mms144_ts_rev32.fw
+	device/samsung/tuna/mms144_ts_rev31.fw:system/vendor/firmware/mms144_ts_rev31.fw \
+	device/samsung/tuna/mms144_ts_rev32.fw:system/vendor/firmware/mms144_ts_rev32.fw
 
 # Portrait dock image
 PRODUCT_COPY_FILES += \
-    device/samsung/tuna/dock.png:system/vendor/res/images/dock/dock.png
+	device/samsung/tuna/dock.png:system/vendor/res/images/dock/dock.png
 
 # Commands to migrate prefs from com.android.nfc3 to com.android.nfc
 PRODUCT_COPY_FILES += $(call add-to-product-copy-files-if-exists,\
-packages/apps/Nfc/migrate_nfc.txt:system/etc/updatecmds/migrate_nfc.txt)
+	packages/apps/Nfc/migrate_nfc.txt:system/etc/updatecmds/migrate_nfc.txt)
 
 # file that declares the MIFARE NFC constant
 PRODUCT_COPY_FILES += \
@@ -190,13 +188,30 @@ PRODUCT_COPY_FILES += \
     $(NFCEE_ACCESS_PATH):system/etc/nfcee_access.xml
 
 PRODUCT_PROPERTY_OVERRIDES += \
-	ro.opengles.version=131072
-
-PRODUCT_PROPERTY_OVERRIDES += \
 	ro.sf.lcd_density=320
 
 PRODUCT_PROPERTY_OVERRIDES += \
 	ro.hwui.disable_scissor_opt=true
+
+# GPU producer to CPU consumer not supported
+PRODUCT_PROPERTY_OVERRIDES += \
+	ro.bq.gpu_to_cpu_unsupported=1
+
+# Newer camera API isn't supported.
+PRODUCT_PROPERTY_OVERRIDES += \
+	camera2.portability.force_api=1
+
+# Show selinux status in Settings-About phone
+PRODUCT_PROPERTY_OVERRIDES += \
+	ro.build.selinux=enforcing
+
+#Enable OpenGLESv2
+PRODUCT_PROPERTY_OVERRIDES += \
+	ro.opengles.version=131072
+
+# Use awesome player for now
+PRODUCT_PROPERTY_OVERRIDES += \
+	persist.sys.media.use-awesome=true
 
 PRODUCT_CHARACTERISTICS := nosdcard
 
@@ -211,16 +226,34 @@ PRODUCT_PACKAGES += \
 	e2fsck \
 	setup_fs
 
+# F2FS filesystem
+PRODUCT_PACKAGES += \
+	mkfs.f2fs \
+	fsck.f2fs \
+	fibmap.f2fs \
+	f2fstat
+
 # Don't preload EGL drivers in Zygote at boot time
-PRODUCT_PROPERTY_OVERRIDES += \
-        ro.zygote.disable_gl_preload=true
+#PRODUCT_PROPERTY_OVERRIDES += \
+#        ro.zygote.disable_gl_preload=true
+
+PRODUCT_PACKAGES += \
+	libwpa_client \
+	hostapd \
+	dhcpcd.conf \
+	wpa_supplicant \
+	wpa_supplicant.conf
+
+# DCC
+PRODUCT_PACKAGES += \
+	dumpdcc
+
 
 $(call inherit-product, frameworks/native/build/phone-xhdpi-1024-dalvik-heap.mk)
-
 $(call inherit-product-if-exists, vendor/nxp/pn544/nxp-pn544-fw-vendor.mk)
-$(call inherit-product, hardware/ti/omap4xxx/omap4.mk)
-$(call inherit-product-if-exists, vendor/ti/proprietary/omap4/ti-omap4-vendor.mk)
-$(call inherit-product-if-exists, vendor/samsung/tuna/device-vendor.mk)
+$(call inherit-product, hardware/ti/omap4/omap4.mk)
+#$(call inherit-product-if-exists, vendor/ti/proprietary/omap4/ti-omap4-vendor.mk)
+#$(call inherit-product-if-exists, vendor/samsung/tuna/tuna-vendor.mk)
 
 BOARD_WLAN_DEVICE_REV := bcm4330_b2
 WIFI_BAND             := 802_11_ABG

@@ -1,0 +1,3 @@
+#bluetooth
+
+allow bluetooth sysfs:file { write read };

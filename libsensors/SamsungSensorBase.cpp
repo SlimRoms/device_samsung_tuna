@@ -62,7 +62,7 @@ SamsungSensorBase::SamsungSensorBase(const char *dev_name,
       mHasPendingEvent(false),
       mInputReader(4),
       mSensorCode(sensor_code),
-      mLock(PTHREAD_MUTEX_INITIALIZER)
+      mLock((pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER)
 {
     mPendingEvent.version = sizeof(sensors_event_t);
     memset(mPendingEvent.data, 0, sizeof(mPendingEvent.data));

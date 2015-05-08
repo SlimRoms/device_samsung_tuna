@@ -14,25 +14,40 @@
 # limitations under the License.
 #
 
+DEVICE_FOLDER := device/samsung/tuna
+
 # This variable is set first, so it can be overridden
 # by BoardConfigVendor.mk
 USE_CAMERA_STUB := true
 
+# inherit from omap4-next
+-include hardware/ti/omap4/BoardConfigCommon.mk
+
 # Use the non-open-source parts, if they're present
 -include vendor/samsung/tuna/BoardConfigVendor.mk
 
+TARGET_BOARD_PLATFORM := omap4
+TARGET_FPU_VARIANT := neon-fp16
+TARGET_BOARD_OMAP_CPU := 4460
+CAMERAHAL_TUNA := true
+DOMX_TUNA := true
+TI_CAMERAHAL_MAX_CAMERAS_SUPPORTED := 2
+TI_CAMERAHAL_USES_LEGACY_DOMX_DCC := true
+COMMON_GLOBAL_CFLAGS += -DDOMX_TUNA
+
+
+# Force the screenshot path to CPU consumer
+COMMON_GLOBAL_CFLAGS += -DFORCE_SCREENSHOT_CPU_PATH
+
+OMAP_ENHANCEMENT_MULTIGPU := false
+
 # Default values, if not overridden else where.
-TARGET_BOARD_INFO_FILE ?= device/samsung/tuna/board-info.txt
-BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR ?= device/samsung/tuna/bluetooth
+TARGET_BOARD_INFO_FILE := $(DEVICE_FOLDER)/board-info.txt
+BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := $(DEVICE_FOLDER)/bluetooth
 
-TARGET_CPU_ABI := armeabi-v7a
-TARGET_CPU_ABI2 := armeabi
-TARGET_CPU_SMP := true
-TARGET_ARCH := arm
-TARGET_ARCH_VARIANT := armv7-a-neon
-TARGET_CPU_VARIANT := cortex-a9
-
-TARGET_NO_BOOTLOADER := true
+# For enabling some things that are OMAP_ENHANCEMENT's and are applicable to tuna...
+OMAP_TUNA := true
+COMMON_GLOBAL_CFLAGS += -DOMAP_TUNA
 
 BOARD_KERNEL_BASE := 0x80000000
 # BOARD_KERNEL_CMDLINE :=
@@ -41,44 +56,60 @@ BOARD_KERNEL_BASE := 0x80000000
 TARGET_KERNEL_CONFIG := slim_tuna_defconfig
 TARGET_KERNEL_SOURCE := kernel/samsung/tuna
 
+# Use dlmalloc
+MALLOC_IMPL := dlmalloc
+
+TARGET_NO_BOOTLOADER := true
 TARGET_NO_RADIOIMAGE := true
-TARGET_BOARD_PLATFORM := omap4
 TARGET_BOOTLOADER_BOARD_NAME := tuna
 
-BOARD_EGL_CFG := device/samsung/tuna/egl.cfg
 BOARD_EGL_WORKAROUND_BUG_10194508 := true
+
+TARGET_TI_HWC_HDMI_DISABLED := true
+
+# Include HDCP keys
 BOARD_CREATE_TUNA_HDCP_KEYS_SYMLINK := true
 
 #BOARD_USES_HGL := true
 #BOARD_USES_OVERLAY := true
-USE_OPENGL_RENDERER := true
 
-# Force the screenshot path to CPU consumer
-COMMON_GLOBAL_CFLAGS += -DFORCE_SCREENSHOT_CPU_PATH
+
+# libwvm needs this, among other things
+COMMON_GLOBAL_CFLAGS += -DNEEDS_VECTORIMPL_SYMBOLS
 
 # set if the target supports FBIO_WAITFORVSYNC
 TARGET_HAS_WAITFORVSYNC := true
 
+# use FBIOPUT_DISPLAY instead of FBIOPUT_VSCREENINFO to refresh the display.
+TARGET_USE_PAN_DISPLAY := true
+
 TARGET_RUNNING_WITHOUT_SYNC_FRAMEWORK := true
+
+TARGET_NEEDS_BIONIC_MD5 := true
 
 TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
 TARGET_RECOVERY_UI_LIB := librecovery_ui_tuna
 
 # device-specific extensions to the updater binary
+# inexplicable build errors with Lollipop...
 TARGET_RECOVERY_UPDATER_LIBS += librecovery_updater_tuna
-TARGET_RELEASETOOLS_EXTENSIONS := device/samsung/tuna
+TARGET_RELEASETOOLS_EXTENSIONS := $(DEVICE_FOLDER)
 
 # use the new recovery.fstab format
 RECOVERY_FSTAB_VERSION = 2
 
-TARGET_RECOVERY_FSTAB = device/samsung/tuna/fstab.tuna
+TARGET_RECOVERY_FSTAB = $(DEVICE_FOLDER)/fstab.tuna
 TARGET_USERIMAGES_USE_EXT4 := true
+TARGET_USERIMAGES_USE_F2FS := true
 BOARD_SYSTEMIMAGE_PARTITION_SIZE := 685768704
 BOARD_USERDATAIMAGE_PARTITION_SIZE := 14539537408
 BOARD_FLASH_BLOCK_SIZE := 4096
 
 #TARGET_PROVIDES_INIT_RC := true
 #TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
+
+# Disable journaling on system.img to save space.
+BOARD_SYSTEMIMAGE_JOURNAL_SIZE := 0
 
 # Wifi related defines
 BOARD_WPA_SUPPLICANT_DRIVER := NL80211
@@ -95,18 +126,25 @@ WIFI_DRIVER_FW_PATH_AP      := "/vendor/firmware/fw_bcmdhd_apsta.bin"
 BOARD_HAVE_BLUETOOTH := true
 BOARD_HAVE_BLUETOOTH_BCM := true
 
-# Boot animation
-TARGET_BOOTANIMATION_PRELOAD := true
-TARGET_BOOTANIMATION_TEXTURE_CACHE := true
-TARGET_BOOTANIMATION_USE_RGB565 := true
 
 BOARD_HAL_STATIC_LIBRARIES := libdumpstate.tuna
 
-BOARD_USES_SECURE_SERVICES := true
 
 BOARD_SEPOLICY_DIRS += \
-        device/samsung/tuna/sepolicy
+        $(DEVICE_FOLDER)/sepolicy
 
 BOARD_SEPOLICY_UNION += \
         genfs_contexts \
-        file_contexts
+        file_contexts \
+        dumpdcc.te \
+        init.te \
+        mediaserver.te \
+        pvrsrvinit.te \
+        rild.te \
+        bluetooth.te \
+        sdcardd.te \
+        servicemanager.te \
+        system_server.te \
+        zygote.te \
+        vold.te
+

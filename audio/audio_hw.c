@@ -71,11 +71,11 @@
 #define MIXER_DL1_BT_VX_SWITCH              "DL1 BT_VX Switch"
 #define MIXER_VOICE_CAPTURE_MIXER_CAPTURE   "Voice Capture Mixer Capture"
 
-#define MIXER_HS_LEFT_PLAYBACK              "HS Left Playback"
-#define MIXER_HS_RIGHT_PLAYBACK             "HS Right Playback"
-#define MIXER_HF_LEFT_PLAYBACK              "HF Left Playback"
-#define MIXER_HF_RIGHT_PLAYBACK             "HF Right Playback"
-#define MIXER_EARPHONE_ENABLE_SWITCH        "Earphone Enable Switch"
+#define MIXER_HS_LEFT_PLAYBACK              "Headset Left Playback"
+#define MIXER_HS_RIGHT_PLAYBACK             "Headset Right Playback"
+#define MIXER_HF_LEFT_PLAYBACK              "Handsfree Left Playback"
+#define MIXER_HF_RIGHT_PLAYBACK             "Handsfree Right Playback"
+#define MIXER_EARPHONE_ENABLE_SWITCH        "Earphone Playback Switch"
 
 #define MIXER_ANALOG_LEFT_CAPTURE_ROUTE     "Analog Left Capture Route"
 #define MIXER_ANALOG_RIGHT_CAPTURE_ROUTE    "Analog Right Capture Route"
@@ -216,7 +216,7 @@
 /* minimum sleep time in out_write() when write threshold is not reached */
 #define MIN_WRITE_SLEEP_US 5000
 
-#define DEFAULT_OUT_SAMPLING_RATE 44100 // 48000 is possible but interacts poorly with HDMI
+#define DEFAULT_OUT_SAMPLING_RATE 48000 // TODO: Check with HDMI.
 
 /* sampling rate when using MM low power port */
 #define MM_LOW_POWER_SAMPLING_RATE 44100
@@ -678,8 +678,10 @@ struct tuna_stream_out {
     pthread_mutex_t lock;       /* see note below on mutex acquisition order */
     struct pcm_config config[PCM_TOTAL];
     struct pcm *pcm[PCM_TOTAL];
+#ifdef OUT_RESAMPLER
     struct resampler_itfe *resampler;
     char *buffer;
+#endif
     size_t buffer_frames;
     int standby;
     struct echo_reference_itfe *echo_reference;
@@ -1437,12 +1439,16 @@ static int start_output_stream_low_latency(struct tuna_stream_out *out)
 
     if (success) {
         out->buffer_frames = pcm_config_tones.period_size * 2;
+#ifdef OUT_RESAMPLER
         if (out->buffer == NULL)
-            out->buffer = malloc(out->buffer_frames * audio_stream_frame_size(&out->stream.common));
+            out->buffer = malloc(out->buffer_frames * audio_stream_out_frame_size(&out->stream));
+#endif
 
         if (adev->echo_reference != NULL)
             out->echo_reference = adev->echo_reference;
+#ifdef OUT_RESAMPLER
         out->resampler->reset(out->resampler);
+#endif
 
         return 0;
     }
@@ -1473,8 +1479,10 @@ static int start_output_stream_deep_buffer(struct tuna_stream_out *out)
         return -ENOMEM;
     }
     out->buffer_frames = DEEP_BUFFER_SHORT_PERIOD_SIZE * 2;
+#ifdef OUT_RESAMPLER
     if (out->buffer == NULL)
-        out->buffer = malloc(out->buffer_frames * audio_stream_frame_size(&out->stream.common));
+        out->buffer = malloc(out->buffer_frames * audio_stream_out_frame_size(&out->stream));
+#endif
 
     return 0;
 }
@@ -1581,7 +1589,7 @@ static void put_echo_reference(struct tuna_audio_device *adev,
 }
 
 static struct echo_reference_itfe *get_echo_reference(struct tuna_audio_device *adev,
-                                               audio_format_t format,
+                                               audio_format_t format __unused,
                                                uint32_t channel_count,
                                                uint32_t sampling_rate)
 {
@@ -1642,7 +1650,7 @@ static int get_playback_delay(struct tuna_stream_out *out,
     return 0;
 }
 
-static uint32_t out_get_sample_rate(const struct audio_stream *stream)
+static uint32_t out_get_sample_rate(const struct audio_stream *stream __unused)
 {
     return DEFAULT_OUT_SAMPLING_RATE;
 }
@@ -1654,7 +1662,7 @@ static uint32_t out_get_sample_rate_hdmi(const struct audio_stream *stream)
     return out->config[PCM_HDMI].rate;
 }
 
-static int out_set_sample_rate(struct audio_stream *stream, uint32_t rate)
+static int out_set_sample_rate(struct audio_stream *stream __unused, uint32_t rate __unused)
 {
     return 0;
 }
@@ -1669,7 +1677,7 @@ static size_t out_get_buffer_size_low_latency(const struct audio_stream *stream)
     from pcm_config_tones.rate. */
     size_t size = (SHORT_PERIOD_SIZE * DEFAULT_OUT_SAMPLING_RATE) / pcm_config_tones.rate;
     size = ((size + 15) / 16) * 16;
-    return size * audio_stream_frame_size((struct audio_stream *)stream);
+    return size * audio_stream_out_frame_size((const struct audio_stream_out *)stream);
 }
 
 static size_t out_get_buffer_size_deep_buffer(const struct audio_stream *stream)
@@ -1683,12 +1691,12 @@ static size_t out_get_buffer_size_deep_buffer(const struct audio_stream *stream)
     size_t size = (DEEP_BUFFER_SHORT_PERIOD_SIZE * DEFAULT_OUT_SAMPLING_RATE) /
                         pcm_config_mm.rate;
     size = ((size + 15) / 16) * 16;
-    return size * audio_stream_frame_size((struct audio_stream *)stream);
+    return size * audio_stream_out_frame_size((const struct audio_stream_out *)stream);
 }
 
 static size_t out_get_buffer_size_hdmi(const struct audio_stream *stream)
 {
-    return HDMI_MULTI_PERIOD_SIZE * audio_stream_frame_size((struct audio_stream *)stream);
+    return HDMI_MULTI_PERIOD_SIZE * audio_stream_out_frame_size((const struct audio_stream_out *)stream);
 }
 
 static audio_channel_mask_t out_get_channels(const struct audio_stream *stream)
@@ -1698,12 +1706,12 @@ static audio_channel_mask_t out_get_channels(const struct audio_stream *stream)
     return out->channel_mask;
 }
 
-static audio_format_t out_get_format(const struct audio_stream *stream)
+static audio_format_t out_get_format(const struct audio_stream *stream __unused)
 {
     return AUDIO_FORMAT_PCM_16_BIT;
 }
 
-static int out_set_format(struct audio_stream *stream, audio_format_t format)
+static int out_set_format(struct audio_stream *stream __unused, audio_format_t format __unused)
 {
     return 0;
 }
@@ -1772,7 +1780,7 @@ static int out_standby(struct audio_stream *stream)
     return status;
 }
 
-static int out_dump(const struct audio_stream *stream, int fd)
+static int out_dump(const struct audio_stream *stream __unused, int fd __unused)
 {
     return 0;
 }
@@ -1913,14 +1921,14 @@ static uint32_t out_get_latency_hdmi(const struct audio_stream_out *stream)
     return (HDMI_MULTI_PERIOD_SIZE * HDMI_MULTI_PERIOD_COUNT * 1000) / out->config[PCM_HDMI].rate;
 }
 
-static int out_set_volume(struct audio_stream_out *stream, float left,
-                          float right)
+static int out_set_volume(struct audio_stream_out *stream __unused, float left __unused,
+                          float right __unused)
 {
     return -ENOSYS;
 }
 
 static int out_set_volume_hdmi(struct audio_stream_out *stream, float left,
-                          float right)
+                          float right __unused)
 {
     struct tuna_stream_out *out = (struct tuna_stream_out *)stream;
 
@@ -1935,7 +1943,7 @@ static ssize_t out_write_low_latency(struct audio_stream_out *stream, const void
     int ret;
     struct tuna_stream_out *out = (struct tuna_stream_out *)stream;
     struct tuna_audio_device *adev = out->dev;
-    size_t frame_size = audio_stream_frame_size(&out->stream.common);
+    size_t frame_size = audio_stream_out_frame_size(stream);
     size_t in_frames = bytes / frame_size;
     size_t out_frames = in_frames;
     bool force_input_standby = false;
@@ -1962,6 +1970,7 @@ static ssize_t out_write_low_latency(struct audio_stream_out *stream, const void
     }
     pthread_mutex_unlock(&adev->lock);
 
+#ifdef OUT_RESAMPLER
     for (i = 0; i < PCM_TOTAL; i++) {
         /* only use resampler if required */
         if (out->pcm[i] && (out->config[i].rate != DEFAULT_OUT_SAMPLING_RATE)) {
@@ -1974,6 +1983,7 @@ static ssize_t out_write_low_latency(struct audio_stream_out *stream, const void
             break;
         }
     }
+#endif
 
     if (out->echo_reference != NULL) {
         struct echo_reference_buffer b;
@@ -1987,13 +1997,17 @@ static ssize_t out_write_low_latency(struct audio_stream_out *stream, const void
     /* Write to all active PCMs */
     for (i = 0; i < PCM_TOTAL; i++) {
         if (out->pcm[i]) {
+#ifdef OUT_RESAMPLER
             if (out->config[i].rate == DEFAULT_OUT_SAMPLING_RATE) {
                 /* PCM uses native sample rate */
+#endif
                 ret = PCM_WRITE(out->pcm[i], (void *)buffer, bytes);
+#ifdef OUT_RESAMPLER
             } else {
                 /* PCM needs resampler */
                 ret = PCM_WRITE(out->pcm[i], (void *)out->buffer, out_frames * frame_size);
             }
+#endif
             if (ret)
                 break;
         }
@@ -2003,7 +2017,7 @@ exit:
     pthread_mutex_unlock(&out->lock);
 
     if (ret != 0) {
-        usleep(bytes * 1000000 / audio_stream_frame_size(&stream->common) /
+        usleep(bytes * 1000000 / audio_stream_out_frame_size(stream) /
                out_get_sample_rate(&stream->common));
     }
 
@@ -2027,7 +2041,7 @@ static ssize_t out_write_deep_buffer(struct audio_stream_out *stream, const void
     int ret;
     struct tuna_stream_out *out = (struct tuna_stream_out *)stream;
     struct tuna_audio_device *adev = out->dev;
-    size_t frame_size = audio_stream_frame_size(&out->stream.common);
+    size_t frame_size = audio_stream_out_frame_size(&out->stream);
     size_t in_frames = bytes / frame_size;
     size_t out_frames;
     bool use_long_periods;
@@ -2067,6 +2081,7 @@ static ssize_t out_write_deep_buffer(struct audio_stream_out *stream, const void
         out->use_long_periods = use_long_periods;
     }
 
+#ifdef OUT_RESAMPLER
     /* only use resampler if required */
     if (out->config[PCM_NORMAL].rate != DEFAULT_OUT_SAMPLING_RATE) {
         out_frames = out->buffer_frames;
@@ -2077,9 +2092,12 @@ static ssize_t out_write_deep_buffer(struct audio_stream_out *stream, const void
                                             &out_frames);
         buf = (void *)out->buffer;
     } else {
+#endif
         out_frames = in_frames;
         buf = (void *)buffer;
+#ifdef OUT_RESAMPLER
     }
+#endif
 
     /* do not allow more than out->write_threshold frames in kernel pcm driver buffer */
     do {
@@ -2106,7 +2124,7 @@ exit:
     pthread_mutex_unlock(&out->lock);
 
     if (ret != 0) {
-        usleep(bytes * 1000000 / audio_stream_frame_size(&stream->common) /
+        usleep(bytes * 1000000 / audio_stream_out_frame_size(stream) /
                out_get_sample_rate(&stream->common));
     }
 
@@ -2119,7 +2137,7 @@ static ssize_t out_write_hdmi(struct audio_stream_out *stream, const void* buffe
     int ret;
     struct tuna_stream_out *out = (struct tuna_stream_out *)stream;
     struct tuna_audio_device *adev = out->dev;
-    size_t frame_size = audio_stream_frame_size(&out->stream.common);
+    size_t frame_size = audio_stream_out_frame_size(&out->stream);
     size_t in_frames = bytes / frame_size;
 
     /* acquiring hw device mutex systematically is useful if a low priority thread is waiting
@@ -2149,7 +2167,7 @@ exit:
     pthread_mutex_unlock(&out->lock);
 
     if (ret != 0) {
-        usleep(bytes * 1000000 / audio_stream_frame_size(&stream->common) /
+        usleep(bytes * 1000000 / audio_stream_out_frame_size(stream) /
                out_get_sample_rate_hdmi(&stream->common));
     }
     /* FIXME: workaround for HDMI multi channel channel swap on first playback after opening
@@ -2161,18 +2179,18 @@ exit:
     return bytes;
 }
 
-static int out_get_render_position(const struct audio_stream_out *stream,
-                                   uint32_t *dsp_frames)
+static int out_get_render_position(const struct audio_stream_out *stream __unused,
+                                   uint32_t *dsp_frames __unused)
 {
     return -EINVAL;
 }
 
-static int out_add_audio_effect(const struct audio_stream *stream, effect_handle_t effect)
+static int out_add_audio_effect(const struct audio_stream *stream __unused, effect_handle_t effect __unused)
 {
     return 0;
 }
 
-static int out_remove_audio_effect(const struct audio_stream *stream, effect_handle_t effect)
+static int out_remove_audio_effect(const struct audio_stream *stream __unused, effect_handle_t effect __unused)
 {
     return 0;
 }
@@ -2247,7 +2265,7 @@ static uint32_t in_get_sample_rate(const struct audio_stream *stream)
     return in->requested_rate;
 }
 
-static int in_set_sample_rate(struct audio_stream *stream, uint32_t rate)
+static int in_set_sample_rate(struct audio_stream *stream __unused, uint32_t rate __unused)
 {
     return 0;
 }
@@ -2268,12 +2286,12 @@ static audio_channel_mask_t in_get_channels(const struct audio_stream *stream)
     return in->main_channels;
 }
 
-static audio_format_t in_get_format(const struct audio_stream *stream)
+static audio_format_t in_get_format(const struct audio_stream *stream __unused)
 {
     return AUDIO_FORMAT_PCM_16_BIT;
 }
 
-static int in_set_format(struct audio_stream *stream, audio_format_t format)
+static int in_set_format(struct audio_stream *stream __unused, audio_format_t format __unused)
 {
     return 0;
 }
@@ -2318,7 +2336,7 @@ static int in_standby(struct audio_stream *stream)
     return status;
 }
 
-static int in_dump(const struct audio_stream *stream, int fd)
+static int in_dump(const struct audio_stream *stream __unused, int fd __unused)
 {
     return 0;
 }
@@ -2369,13 +2387,13 @@ static int in_set_parameters(struct audio_stream *stream, const char *kvpairs)
     return ret;
 }
 
-static char * in_get_parameters(const struct audio_stream *stream,
-                                const char *keys)
+static char * in_get_parameters(const struct audio_stream *stream __unused,
+                                const char *keys __unused)
 {
     return strdup("");
 }
 
-static int in_set_gain(struct audio_stream_in *stream, float gain)
+static int in_set_gain(struct audio_stream_in *stream __unused, float gain __unused)
 {
     return 0;
 }
@@ -2492,8 +2510,9 @@ static int set_preprocessor_echo_delay(effect_handle_t handle,
 
     param->psize = sizeof(uint32_t);
     param->vsize = sizeof(uint32_t);
-    *(uint32_t *)param->data = AEC_PARAM_ECHO_DELAY;
-    *((int32_t *)param->data + 1) = delay_us;
+    uint32_t ed = AEC_PARAM_ECHO_DELAY;
+    memcpy(&param->data, &ed, sizeof(uint32_t));
+    memcpy((void*)(&param->data) + sizeof(int32_t), &delay_us, sizeof(int32_t));
 
     return set_preprocessor_param(handle, param);
 }
@@ -2761,13 +2780,12 @@ static ssize_t process_frames(struct tuna_stream_in *in, void* buffer, ssize_t f
 }
 
 static ssize_t in_read(struct audio_stream_in *stream, void* buffer,
-
                        size_t bytes)
 {
     int ret = 0;
     struct tuna_stream_in *in = (struct tuna_stream_in *)stream;
     struct tuna_audio_device *adev = in->dev;
-    size_t frames_rq = bytes / audio_stream_frame_size(&stream->common);
+    size_t frames_rq = bytes / audio_stream_in_frame_size(stream);
 
     /* acquiring hw device mutex systematically is useful if a low priority thread is waiting
      * on the input stream mutex - e.g. executing select_mode() while holding the hw device
@@ -2800,14 +2818,14 @@ static ssize_t in_read(struct audio_stream_in *stream, void* buffer,
 
 exit:
     if (ret < 0)
-        usleep(bytes * 1000000 / audio_stream_frame_size(&stream->common) /
+        usleep(bytes * 1000000 / audio_stream_in_frame_size(stream) /
                in_get_sample_rate(&stream->common));
 
     pthread_mutex_unlock(&in->lock);
     return bytes;
 }
 
-static uint32_t in_get_input_frames_lost(struct audio_stream_in *stream)
+static uint32_t in_get_input_frames_lost(struct audio_stream_in *stream __unused)
 {
     return 0;
 }
@@ -2860,7 +2878,7 @@ static int in_configure_reverse(struct tuna_stream_in *in)
 
 #define MAX_NUM_CHANNEL_CONFIGS 10
 
-static void in_read_audio_effect_channel_configs(struct tuna_stream_in *in,
+static void in_read_audio_effect_channel_configs(struct tuna_stream_in *in __unused,
                                                  struct effect_info_s *effect_info)
 {
     /* size and format of the cmd are defined in hardware/audio_effect.h */
@@ -3222,11 +3240,12 @@ static int out_read_hdmi_channel_masks(struct tuna_stream_out *out) {
 }
 
 static int adev_open_output_stream(struct audio_hw_device *dev,
-                                   audio_io_handle_t handle,
+                                   audio_io_handle_t handle __unused,
                                    audio_devices_t devices,
                                    audio_output_flags_t flags,
                                    struct audio_config *config,
-                                   struct audio_stream_out **stream_out)
+                                   struct audio_stream_out **stream_out,
+                                   const char *address __unused)
 {
     struct tuna_audio_device *ladev = (struct tuna_audio_device *)dev;
     struct tuna_stream_out *out;
@@ -3295,6 +3314,7 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
         out->stream.set_volume = out_set_volume;
     }
 
+#ifdef OUT_RESAMPLER
     ret = create_resampler(DEFAULT_OUT_SAMPLING_RATE,
                            MM_FULL_POWER_SAMPLING_RATE,
                            2,
@@ -3303,6 +3323,7 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
                            &out->resampler);
     if (ret != 0)
         goto err_open;
+#endif
 
     out->stream.common.set_sample_rate = out_set_sample_rate;
     out->stream.common.get_channels = out_get_channels;
@@ -3356,10 +3377,12 @@ static void adev_close_output_stream(struct audio_hw_device *dev,
         }
     }
 
+#ifdef OUT_RESAMPLER
     if (out->buffer)
         free(out->buffer);
     if (out->resampler)
         release_resampler(out->resampler);
+#endif
     free(stream);
 }
 
@@ -3416,13 +3439,13 @@ static int adev_set_parameters(struct audio_hw_device *dev, const char *kvpairs)
     return ret;
 }
 
-static char * adev_get_parameters(const struct audio_hw_device *dev,
-                                  const char *keys)
+static char * adev_get_parameters(const struct audio_hw_device *dev __unused,
+                                  const char *keys __unused)
 {
     return strdup("");
 }
 
-static int adev_init_check(const struct audio_hw_device *dev)
+static int adev_init_check(const struct audio_hw_device *dev __unused)
 {
     return 0;
 }
@@ -3441,7 +3464,7 @@ static int adev_set_voice_volume(struct audio_hw_device *dev, float volume)
     return 0;
 }
 
-static int adev_set_master_volume(struct audio_hw_device *dev, float volume)
+static int adev_set_master_volume(struct audio_hw_device *dev __unused, float volume __unused)
 {
     return -ENOSYS;
 }
@@ -3478,7 +3501,7 @@ static int adev_get_mic_mute(const struct audio_hw_device *dev, bool *state)
     return 0;
 }
 
-static size_t adev_get_input_buffer_size(const struct audio_hw_device *dev,
+static size_t adev_get_input_buffer_size(const struct audio_hw_device *dev __unused,
                                          const struct audio_config *config)
 {
     size_t size;
@@ -3490,10 +3513,13 @@ static size_t adev_get_input_buffer_size(const struct audio_hw_device *dev,
 }
 
 static int adev_open_input_stream(struct audio_hw_device *dev,
-                                  audio_io_handle_t handle,
+                                  audio_io_handle_t handle __unused,
                                   audio_devices_t devices,
                                   struct audio_config *config,
-                                  struct audio_stream_in **stream_in)
+                                  struct audio_stream_in **stream_in,
+                                  audio_input_flags_t flags __unused,
+                                  const char *address __unused,
+                                  audio_source_t source __unused)
 {
     struct tuna_audio_device *ladev = (struct tuna_audio_device *)dev;
     struct tuna_stream_in *in;
@@ -3566,7 +3592,7 @@ err:
     return ret;
 }
 
-static void adev_close_input_stream(struct audio_hw_device *dev,
+static void adev_close_input_stream(struct audio_hw_device *dev __unused,
                                    struct audio_stream_in *stream)
 {
     struct tuna_stream_in *in = (struct tuna_stream_in *)stream;
@@ -3593,7 +3619,7 @@ static void adev_close_input_stream(struct audio_hw_device *dev,
     return;
 }
 
-static int adev_dump(const audio_hw_device_t *device, int fd)
+static int adev_dump(const audio_hw_device_t *device __unused, int fd __unused)
 {
     return 0;
 }

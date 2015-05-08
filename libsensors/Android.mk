@@ -26,15 +26,19 @@ LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_CFLAGS := -DLOG_TAG=\"Sensors\"
+
 LOCAL_C_INCLUDES += hardware/invensense/libsensors hardware/invensense/60xx/libsensors
+
 LOCAL_SRC_FILES := \
 	sensors.cpp \
 	InputEventReader.cpp \
 	LightSensor.cpp \
 	ProximitySensor.cpp \
 	PressureSensor.cpp \
-	SamsungSensorBase.cpp
+	SamsungSensorBase.cpp \
+	TemperatureSensor.cpp
 
 LOCAL_SHARED_LIBRARIES := libinvensense_hal liblog libcutils libutils libdl
+LOCAL_CLANG := true
 
 include $(BUILD_SHARED_LIBRARY)

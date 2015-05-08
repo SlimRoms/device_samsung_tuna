@@ -76,7 +76,7 @@ def IncrementalOTA_InstallEnd(info):
   except KeyError:
     print "no radio.img in target target_files; skipping install"
 
-  FsSizeFix(info)
+  #FsSizeFix(info)
 
 def FsSizeFix(info):
   info.script.Print("Fixing fs_size in crypto footer...")

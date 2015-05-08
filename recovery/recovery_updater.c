@@ -23,7 +23,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <cryptfs.h>
+#include "cryptfs.h"
 
 #include "edify/expr.h"
 #include "bootloader.h"
