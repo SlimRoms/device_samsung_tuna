@@ -52,8 +52,15 @@ PRODUCT_PACKAGES += \
 	audio.usb.default \
 	audio.r_submix.default
 
+ifeq ($(TARGET_TUNA_AUDIO_HDMI),true)
 PRODUCT_COPY_FILES += \
-	device/samsung/tuna/audio/audio_policy.conf:system/etc/audio_policy.conf \
+	device/samsung/tuna/audio/policy/audio_policy.hdmi.conf:system/etc/audio_policy.conf
+else
+PRODUCT_COPY_FILES += \
+	device/samsung/tuna/audio/policy/audio_policy.default.conf:system/etc/audio_policy.conf
+endif
+
+PRODUCT_COPY_FILES += \
 	device/samsung/tuna/audio_effects.conf:system/vendor/etc/audio_effects.conf \
 	frameworks/av/media/libstagefright/data/media_codecs_google_audio.xml:system/etc/media_codecs_google_audio.xml \
 	frameworks/av/media/libstagefright/data/media_codecs_google_telephony.xml:system/etc/media_codecs_google_telephony.xml \
