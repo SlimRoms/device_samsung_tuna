@@ -24,6 +24,12 @@ LOCAL_C_INCLUDES += \
 	$(call include-path-for, audio-utils) \
 	$(call include-path-for, audio-effects)
 LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libaudioutils libdl
+
+# Open-source secril-client allows us to directly hook into the RIL audio stuff
+# rather than using hackish symbol lookups like the prebuilt one required.
+LOCAL_SHARED_LIBRARIES += libsecril-client
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/../ril/
+
 LOCAL_MODULE_TAGS := optional
 
 # A lot of audio-related things use ARM over Thumb, let's do the same here.

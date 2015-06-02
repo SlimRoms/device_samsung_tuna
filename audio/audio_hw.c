@@ -160,6 +160,9 @@ static int start_call(struct tuna_audio_device *adev)
     ALOGE("Opening modem PCMs");
 
     pcm_config_vx.rate = adev->wb_amr ? VX_WB_SAMPLING_RATE : VX_NB_SAMPLING_RATE;
+    if (adev->wb_amr) {
+        ALOGE("Using WB AMR...");
+    }
 
     /* Open modem PCM channels */
     if (adev->pcm_modem_dl == NULL) {
@@ -225,6 +228,7 @@ void audio_set_wb_amr_callback(void *data, int enable)
 
     pthread_mutex_lock(&adev->lock);
     if (adev->wb_amr != enable) {
+        ALOGE("Changing wb_amr value.");
         adev->wb_amr = enable;
 
         /* reopen the modem PCMs at the new rate */
