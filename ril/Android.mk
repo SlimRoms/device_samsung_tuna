@@ -21,6 +21,5 @@ LOCAL_CFLAGS += -DMODEM_TYPE_XMM7260
 endif
 
 LOCAL_MODULE := libsecril-client
-LOCAL_PRELINK_MODULE := false
 
 include $(BUILD_SHARED_LIBRARY)

@@ -9,8 +9,11 @@
 #ifndef __SECRIL_CLIENT_H__
 #define __SECRIL_CLIENT_H__
 
-// Changes done for tuna are ifdef'd under this to easily identify them.
+// Changes done for tuna are ifdef'd under TUNA_RIL to easily identify them.
 #define TUNA_RIL
+// Some things aren't used by tuna anywhere, but may actually work; these
+// are ifdef'd under TUNA_RIL_STRIP so they can be used for testing easily still.
+#define TUNA_RIL_STRIP
 
 #include <sys/types.h>
 //#include "SecProductFeature_RIL.h"
@@ -264,6 +267,7 @@ int SetCallAudioPath(HRilClient client, AudioPath path);
 int SetCallAudioPath(HRilClient client, AudioPath path, ExtraVolume mode);
 #endif
 
+#ifndef TUNA_RIL_STRIP
 /**
  * Set modem clock to master or slave.
  */
@@ -291,23 +295,22 @@ int GetMute(HRilClient client, RilOnComplete handler);
 
 int SetTwoMicControl(HRilClient client, TwoMicSolDevice device, TwoMicSolReport report);
 
-#ifndef TUNA_RIL
-/**
- * DHA Solution Set
- */
-int SetDhaSolution(HRilClient client, DhaSolMode mode, DhaSolSelect select, char *parameter);
-#endif
-
 /**
  * Set Loopback Test Mode and Path
  */
 int SetLoopbackTest(HRilClient client, LoopbackMode mode, AudioPath path);
+#endif
 
 #ifdef TUNA_RIL
 /**
  * Check AMR-WB support
  */
 int GetWB_AMR(HRilClient client, RilOnComplete handler);
+#else
+/**
+ * DHA Solution Set
+ */
+int SetDhaSolution(HRilClient client, DhaSolMode mode, DhaSolSelect select, char *parameter);
 #endif
 
 #ifdef __cplusplus

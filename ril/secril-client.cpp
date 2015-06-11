@@ -174,13 +174,14 @@ static RilOnUnsolicited FindUnsolHandler(RilClientPrv *prv, uint32_t id);
 static int SendOemRequestHookRaw(HRilClient client, int req_id, char *data, size_t len);
 static bool isValidSoundType(SoundType type);
 static bool isValidAudioPath(AudioPath path);
+#ifndef TUNA_RIL_STRIP
 static bool isValidSoundClockCondition(SoundClockCondition condition);
 static bool isValidCallRecCondition(CallRecCondition condition);
 static bool isValidMuteCondition(MuteCondition condition);
 static bool isValidTwoMicCtrl(TwoMicSolDevice device, TwoMicSolReport report);
+#endif
 static char ConvertSoundType(SoundType type);
 static char ConvertAudioPath(AudioPath path);
-
 
 /**
  * @fn  int RegisterUnsolicitedHandler(HRilClient client, uint32_t id, RilOnUnsolicited handler)
@@ -239,7 +240,6 @@ int RegisterUnsolicitedHandler(HRilClient client, uint32_t id, RilOnUnsolicited 
     return RIL_CLIENT_ERR_SUCCESS;
 }
 
-
 /**
  * @fn  int RegisterRequestCompleteHandler(HRilClient client, uint32_t id, RilOnComplete handler)
  *
@@ -297,7 +297,6 @@ int RegisterRequestCompleteHandler(HRilClient client, uint32_t id, RilOnComplete
     return RIL_CLIENT_ERR_SUCCESS;
 }
 
-
 /**
  * @fn  int RegisterErrorCallback(HRilClient client, RilOnError cb, void *data)
  *
@@ -349,7 +348,6 @@ HRilClient OpenClient_RILD(void) {
 
     return client;
 }
-
 
 /**
  * @fn  int Connect_RILD(void)
@@ -605,7 +603,6 @@ int Disconnect_RILD(HRilClient client) {
     return RIL_CLIENT_ERR_SUCCESS;
 }
 
-
 /**
  * @fn  int CloseClient_RILD(HRilClient client)
  *
@@ -673,7 +670,6 @@ int SetCallVolume(HRilClient client, SoundType type, int vol_level) {
     return ret;
 }
 
-
 /**
  * Set external sound device path for noise reduction.
  */
@@ -724,7 +720,7 @@ int SetCallAudioPath(HRilClient client, AudioPath path, ExtraVolume mode) {
     return ret;
 }
 
-
+#ifndef TUNA_RIL_STRIP
 /**
  * Set modem clock to master or slave.
  */
@@ -981,7 +977,88 @@ int SetTwoMicControl(HRilClient client, TwoMicSolDevice device, TwoMicSolReport 
     return ret;
 }
 
-#ifndef TUNA_RIL
+/**
+ * Set LoopbackTest mode, path.
+ */
+extern "C"
+int SetLoopbackTest(HRilClient client, LoopbackMode mode, AudioPath path) {
+    RilClientPrv *client_prv;
+    int ret;
+    char data[6] = {0,};
+
+    if (client == NULL || client->prv == NULL) {
+        ALOGE("%s: Invalid client %p", __FUNCTION__, client);
+        return RIL_CLIENT_ERR_INVAL;
+    }
+
+    client_prv = (RilClientPrv *)(client->prv);
+
+    if (client_prv->sock < 0 ) {
+        ALOGE("%s: Not connected.", __FUNCTION__);
+        return RIL_CLIENT_ERR_CONNECT;
+    }
+
+    // Make raw data
+    data[0] = OEM_FUNC_SOUND;
+    data[1] = OEM_SND_SET_LOOPBACK_CTRL;
+    data[2] = 0x00;     // data length
+    data[3] = 0x06;     // data length
+    data[4] = mode; // Loopback Mode
+    data[5] = ConvertAudioPath(path); // Loopback path
+
+    RegisterRequestCompleteHandler(client, REQ_SET_LOOPBACK, NULL);
+
+    ret = SendOemRequestHookRaw(client, REQ_SET_LOOPBACK, data, sizeof(data));
+    if (ret != RIL_CLIENT_ERR_SUCCESS) {
+        RegisterRequestCompleteHandler(client, REQ_SET_LOOPBACK, NULL);
+    }
+
+    return ret;
+}
+#endif
+
+#ifdef TUNA_RIL
+/**
+ * Check AMR-WB support
+ */
+extern "C"
+int GetWB_AMR(HRilClient client, RilOnComplete handler) {
+    RilClientPrv *client_prv;
+    int ret;
+    char data[4] = {0,};
+ 
+    if (client == NULL || client->prv == NULL) {
+        ALOGE("%s: Invalid client %p", __FUNCTION__, client);
+        return RIL_CLIENT_ERR_INVAL;
+    }
+ 
+    client_prv = (RilClientPrv *)(client->prv);
+ 
+    if (client_prv->sock < 0 ) {
+        ALOGE("%s: Not connected.", __FUNCTION__);
+        return RIL_CLIENT_ERR_CONNECT;
+    }
+ 
+    client_prv->b_del_handler = 1;
+ 
+    // Make raw data
+    data[0] = OEM_FUNC_SOUND;
+    data[1] = OEM_SND_GET_WB_AMR;
+    data[2] = 0x00; // data length
+    data[3] = 0x04; // data length
+ 
+    RegisterRequestCompleteHandler(client, REQ_GET_WB_AMR, handler);
+ 
+    ret = SendOemRequestHookRaw(client, REQ_GET_WB_AMR, data, sizeof(data));
+    if (ret != RIL_CLIENT_ERR_SUCCESS) {
+        RegisterRequestCompleteHandler(client, REQ_GET_WB_AMR, NULL);
+    }
+ 
+    return ret;
+}
+
+#else
+
 extern "C"
 int SetDhaSolution(HRilClient client, DhaSolMode mode, DhaSolSelect select, char *parameter) {
     RilClientPrv *client_prv;
@@ -1027,87 +1104,6 @@ int SetDhaSolution(HRilClient client, DhaSolMode mode, DhaSolSelect select, char
 #endif
 
 /**
- * Set LoopbackTest mode, path.
- */
-extern "C"
-int SetLoopbackTest(HRilClient client, LoopbackMode mode, AudioPath path) {
-    RilClientPrv *client_prv;
-    int ret;
-    char data[6] = {0,};
-
-    if (client == NULL || client->prv == NULL) {
-        ALOGE("%s: Invalid client %p", __FUNCTION__, client);
-        return RIL_CLIENT_ERR_INVAL;
-    }
-
-    client_prv = (RilClientPrv *)(client->prv);
-
-    if (client_prv->sock < 0 ) {
-        ALOGE("%s: Not connected.", __FUNCTION__);
-        return RIL_CLIENT_ERR_CONNECT;
-    }
-
-    // Make raw data
-    data[0] = OEM_FUNC_SOUND;
-    data[1] = OEM_SND_SET_LOOPBACK_CTRL;
-    data[2] = 0x00;     // data length
-    data[3] = 0x06;     // data length
-    data[4] = mode; // Loopback Mode
-    data[5] = ConvertAudioPath(path); // Loopback path
-
-    RegisterRequestCompleteHandler(client, REQ_SET_LOOPBACK, NULL);
-
-    ret = SendOemRequestHookRaw(client, REQ_SET_LOOPBACK, data, sizeof(data));
-    if (ret != RIL_CLIENT_ERR_SUCCESS) {
-        RegisterRequestCompleteHandler(client, REQ_SET_LOOPBACK, NULL);
-    }
-
-    return ret;
-}
-
-#ifdef TUNA_RIL
-/**
- * Check AMR-WB support
- */
-extern "C"
-int GetWB_AMR(HRilClient client, RilOnComplete handler) {
-    RilClientPrv *client_prv;
-    int ret;
-    char data[4] = {0,};
- 
-    if (client == NULL || client->prv == NULL) {
-        ALOGE("%s: Invalid client %p", __FUNCTION__, client);
-        return RIL_CLIENT_ERR_INVAL;
-    }
- 
-    client_prv = (RilClientPrv *)(client->prv);
- 
-    if (client_prv->sock < 0 ) {
-        ALOGE("%s: Not connected.", __FUNCTION__);
-        return RIL_CLIENT_ERR_CONNECT;
-    }
- 
-    client_prv->b_del_handler = 1;
- 
-    // Make raw data
-    data[0] = OEM_FUNC_SOUND;
-    data[1] = OEM_SND_GET_WB_AMR;
-    data[2] = 0x00; // data length
-    data[3] = 0x04; // data length
- 
-    RegisterRequestCompleteHandler(client, REQ_GET_WB_AMR, handler);
- 
-    ret = SendOemRequestHookRaw(client, REQ_GET_WB_AMR, data, sizeof(data));
-    if (ret != RIL_CLIENT_ERR_SUCCESS) {
-        RegisterRequestCompleteHandler(client, REQ_GET_WB_AMR, NULL);
-    }
- 
-    return ret;
-}
-#endif
-
-
-/**
  * @fn  int InvokeOemRequestHookRaw(HRilClient client, char *data, size_t len)
  *
  * @params  client: Client handle.
@@ -1135,7 +1131,6 @@ int InvokeOemRequestHookRaw(HRilClient client, char *data, size_t len) {
 
     return SendOemRequestHookRaw(client, REQ_OEM_HOOK_RAW, data, len);
 }
-
 
 static int SendOemRequestHookRaw(HRilClient client, int req_id, char *data, size_t len) {
     int token = 0;
@@ -1197,12 +1192,11 @@ static bool isValidSoundType(SoundType type) {
     return (type >= SOUND_TYPE_VOICE && type <= SOUND_TYPE_BTVOICE);
 }
 
-
 static bool isValidAudioPath(AudioPath path) {
     return (path >= SOUND_AUDIO_PATH_HANDSET && path <= OEM_SND_AUDIO_PATH_BT_WB_NSEC_OFF);
 }
 
-
+#ifndef TUNA_RIL_STRIP
 static bool isValidSoundClockCondition(SoundClockCondition condition) {
     return (condition >= SOUND_CLOCK_STOP && condition <= SOUND_CLOCK_START);
 }
@@ -1218,6 +1212,7 @@ static bool isValidMuteCondition(MuteCondition condition) {
 static bool isValidTwoMicCtrl(TwoMicSolDevice device, TwoMicSolReport report) {
     return (device >= AUDIENCE && device <= FORTEMEDIA && report >= TWO_MIC_SOLUTION_OFF && report <= TWO_MIC_SOLUTION_ON  );
 }
+#endif
 
 
 static char ConvertSoundType(SoundType type) {
@@ -1234,7 +1229,6 @@ static char ConvertSoundType(SoundType type) {
             return OEM_SND_TYPE_VOICE;
     }
 }
-
 
 static char ConvertAudioPath(AudioPath path) {
     switch (path) {
