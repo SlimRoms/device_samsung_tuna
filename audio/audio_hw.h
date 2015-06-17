@@ -19,6 +19,7 @@
 
 
 #include <pthread.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -426,11 +427,11 @@ struct tuna_stream_in {
     int device;
     struct resampler_itfe *resampler;
     struct resampler_buffer_provider buf_provider;
-    unsigned int requested_rate;
+    uint32_t requested_rate;
+    int16_t source;
     bool standby;
-    int source;
-    struct echo_reference_itfe *echo_reference;
     bool need_echo_reference;
+    struct echo_reference_itfe *echo_reference;
 
     int16_t *read_buf;
     size_t read_buf_size;
@@ -462,10 +463,11 @@ struct tuna_stream_out {
     pthread_mutex_t lock;       /* see note below on mutex acquisition order */
     struct pcm_config config[PCM_TOTAL];
     struct pcm *pcm[PCM_TOTAL];
-    bool standby;
     struct echo_reference_itfe *echo_reference;
-    int write_threshold;
+    uint16_t write_threshold;
     bool use_long_periods;
+    bool standby;
+    bool muted;
 #ifdef USE_HDMI_AUDIO
     audio_channel_mask_t channel_mask;
     audio_channel_mask_t sup_channel_masks[3];
@@ -474,14 +476,13 @@ struct tuna_stream_out {
 #ifdef USE_HDMI_AUDIO
     /* FIXME: workaround for HDMI multi channel channel swap on first playback after opening
      * the output stream: force reopening the pcm driver after writing a few periods. */
-    int restart_periods_cnt;
+    uint8_t restart_periods_cnt;
 #endif
-    bool muted;
 
     struct tuna_audio_device *dev;
 
 #ifdef USE_VARIABLE_SAMPLING_RATE
-    unsigned int sample_rate;
+    uint32_t sample_rate;
 #endif
 };
 
@@ -496,17 +497,17 @@ struct tuna_audio_device {
     int in_device;
     struct pcm *pcm_modem_dl;
     struct pcm *pcm_modem_ul;
-    int in_call;
     float voice_volume;
     struct tuna_stream_in *active_input;
     struct tuna_stream_out *outputs[OUTPUT_TOTAL];
-    bool mic_mute;
-    int tty_mode;
     struct echo_reference_itfe *echo_reference;
-    bool bluetooth_nrec;
-    int wb_amr;
     bool screen_off;
     bool device_is_toro;
+    bool in_call;
+    bool mic_mute;
+    uint8_t tty_mode;
+    bool wb_amr;
+    bool bluetooth_nrec;
 
     /* RIL */
     struct ril_handle ril;

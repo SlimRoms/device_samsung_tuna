@@ -222,7 +222,7 @@ static void set_eq_filter(struct tuna_audio_device *adev)
         mixer_ctl_set_enum_by_string(adev->mixer_ctls.dl1_eq, MIXER_FLAT_RESPONSE);
 }
 
-void audio_set_wb_amr_callback(void *data, int enable)
+void audio_set_wb_amr_callback(void *data, bool enable)
 {
     struct tuna_audio_device *adev = (struct tuna_audio_device *)data;
 
@@ -488,13 +488,13 @@ static void select_mode(struct tuna_audio_device *adev)
             select_output_device(adev);
             start_call(adev);
             ril_set_call_volume(&adev->ril, SOUND_TYPE_VOICE, adev->voice_volume);
-            adev->in_call = 1;
+            adev->in_call = true;
         }
     } else {
         ALOGE("Leaving IN_CALL state, in_call=%d, mode=%d",
              adev->in_call, adev->mode);
         if (adev->in_call) {
-            adev->in_call = 0;
+            adev->in_call = false;
             end_call(adev);
             force_all_standby(adev);
             select_output_device(adev);
@@ -2746,7 +2746,7 @@ static int adev_set_parameters(struct audio_hw_device *dev, const char *kvpairs)
     parms = str_parms_create_str(kvpairs);
     ret = str_parms_get_str(parms, AUDIO_PARAMETER_KEY_TTY_MODE, value, sizeof(value));
     if (ret >= 0) {
-        int tty_mode;
+        uint8_t tty_mode;
 
         if (strcmp(value, AUDIO_PARAMETER_VALUE_TTY_OFF) == 0)
             tty_mode = TTY_MODE_OFF;
@@ -3118,7 +3118,7 @@ static int adev_open(const hw_module_t* module, const char* name,
     adev->tty_mode = TTY_MODE_OFF;
     adev->device_is_toro = is_device_toro();
     adev->bluetooth_nrec = true;
-    adev->wb_amr = 0;
+    adev->wb_amr = false;
 
     /* RIL */
     ril_open(&adev->ril);
