@@ -35,6 +35,7 @@ int ril_close(struct ril_handle *ril);
 int ril_set_call_volume(struct ril_handle *ril, enum _SoundType sound_type,
                         float volume);
 int ril_set_call_audio_path(struct ril_handle *ril, enum _AudioPath path);
+int ril_set_mute_state(struct ril_handle *ril, enum _MuteCondition state);
 void ril_register_set_wb_amr_callback(void *function, void *data);
 
 #endif

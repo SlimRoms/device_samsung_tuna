@@ -267,6 +267,28 @@ int SetCallAudioPath(HRilClient client, AudioPath path);
 int SetCallAudioPath(HRilClient client, AudioPath path, ExtraVolume mode);
 #endif
 
+/**
+ * Get mute state
+ */
+int GetMute(HRilClient client, RilOnComplete handler);
+
+/**
+ * Set mute or unmute
+ */
+int SetMute(HRilClient client, MuteCondition condition);
+
+#ifdef TUNA_RIL
+/**
+ * Check AMR-WB support
+ */
+int GetWB_AMR(HRilClient client, RilOnComplete handler);
+#else
+/**
+ * DHA Solution Set
+ */
+int SetDhaSolution(HRilClient client, DhaSolMode mode, DhaSolSelect select, char *parameter);
+#endif
+
 #ifndef TUNA_RIL_STRIP
 /**
  * Set modem clock to master or slave.
@@ -283,34 +305,12 @@ int SetVideoCallClockSync(HRilClient client, SoundClockCondition condition);
  */
 int SetCallRecord(HRilClient client, CallRecCondition condition);
 
-/**
- * Set mute or unmute
- */
-int SetMute(HRilClient client, MuteCondition condition);
-
-/**
- * Get mute state
- */
-int GetMute(HRilClient client, RilOnComplete handler);
-
 int SetTwoMicControl(HRilClient client, TwoMicSolDevice device, TwoMicSolReport report);
 
 /**
  * Set Loopback Test Mode and Path
  */
 int SetLoopbackTest(HRilClient client, LoopbackMode mode, AudioPath path);
-#endif
-
-#ifdef TUNA_RIL
-/**
- * Check AMR-WB support
- */
-int GetWB_AMR(HRilClient client, RilOnComplete handler);
-#else
-/**
- * DHA Solution Set
- */
-int SetDhaSolution(HRilClient client, DhaSolMode mode, DhaSolSelect select, char *parameter);
 #endif
 
 #ifdef __cplusplus

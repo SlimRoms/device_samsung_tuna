@@ -130,3 +130,11 @@ int ril_set_call_audio_path(struct ril_handle *ril, enum _AudioPath path)
 
     return SetCallAudioPath(ril->client, path);
 }
+
+int ril_set_mute_state(struct ril_handle *ril, enum _MuteCondition state)
+{
+    if (ril_connect_if_required(ril))
+        return 0;
+
+    return SetMute(ril->client, state);
+}
