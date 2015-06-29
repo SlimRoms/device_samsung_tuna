@@ -174,8 +174,8 @@ static RilOnUnsolicited FindUnsolHandler(RilClientPrv *prv, uint32_t id);
 static int SendOemRequestHookRaw(HRilClient client, int req_id, char *data, size_t len);
 static bool isValidSoundType(SoundType type);
 static bool isValidAudioPath(AudioPath path);
-static bool isValidMuteCondition(MuteCondition condition);
 #ifndef TUNA_RIL_STRIP
+static bool isValidMuteCondition(MuteCondition condition);
 static bool isValidSoundClockCondition(SoundClockCondition condition);
 static bool isValidCallRecCondition(CallRecCondition condition);
 static bool isValidTwoMicCtrl(TwoMicSolDevice device, TwoMicSolReport report);
@@ -720,88 +720,6 @@ int SetCallAudioPath(HRilClient client, AudioPath path, ExtraVolume mode) {
     return ret;
 }
 
-/**
- * Get mute state.
- */
-extern "C"
-int GetMute(HRilClient client, RilOnComplete handler) {
-    RilClientPrv *client_prv;
-    int ret;
-    char data[4] = {0,};
-
-    if (client == NULL || client->prv == NULL) {
-        ALOGE("%s: Invalid client %p", __FUNCTION__, client);
-        return RIL_CLIENT_ERR_INVAL;
-    }
-
-    client_prv = (RilClientPrv *)(client->prv);
-
-    if (client_prv->sock < 0 ) {
-        ALOGE("%s: Not connected.", __FUNCTION__);
-        return RIL_CLIENT_ERR_CONNECT;
-    }
-
-    client_prv->b_del_handler = 1;
-
-    // Make raw data
-    data[0] = OEM_FUNC_SOUND;
-    data[1] = OEM_SND_GET_MUTE;
-    data[2] = 0x00; // data length
-    data[3] = 0x04; // data length
-
-    RegisterRequestCompleteHandler(client, REQ_GET_CALL_MUTE, handler);
-
-    ret = SendOemRequestHookRaw(client, REQ_GET_CALL_MUTE, data, sizeof(data));
-    if (ret != RIL_CLIENT_ERR_SUCCESS) {
-        RegisterRequestCompleteHandler(client, REQ_GET_CALL_MUTE, NULL);
-    }
-
-    return ret;
-}
-
-/**
- * Set mute or unmute.
- */
-extern "C"
-int SetMute(HRilClient client, MuteCondition condition) {
-    RilClientPrv *client_prv;
-    int ret;
-    char data[5] = {0,};
-
-    if (client == NULL || client->prv == NULL) {
-        ALOGE("%s: Invalid client %p", __FUNCTION__, client);
-        return RIL_CLIENT_ERR_INVAL;
-    }
-
-    client_prv = (RilClientPrv *)(client->prv);
-
-    if (client_prv->sock < 0 ) {
-        ALOGE("%s: Not connected.", __FUNCTION__);
-        return RIL_CLIENT_ERR_CONNECT;
-    }
-
-    if (isValidMuteCondition(condition) == false) {
-        ALOGE("%s: Invalid sound clock condition", __FUNCTION__);
-        return RIL_CLIENT_ERR_INVAL;
-    }
-
-    // Make raw data
-    data[0] = OEM_FUNC_SOUND;
-    data[1] = OEM_SND_SET_MUTE;
-    data[2] = 0x00; // data length
-    data[3] = 0x05; // data length
-    data[4] = condition;
-
-    RegisterRequestCompleteHandler(client, REQ_SET_CALL_MUTE, NULL);
-
-    ret = SendOemRequestHookRaw(client, REQ_SET_CALL_MUTE, data, sizeof(data));
-    if (ret != RIL_CLIENT_ERR_SUCCESS) {
-        RegisterRequestCompleteHandler(client, REQ_SET_CALL_MUTE, NULL);
-    }
-
-    return ret;
-}
-
 #ifdef TUNA_RIL
 /**
  * Check AMR-WB support
@@ -889,6 +807,89 @@ int SetDhaSolution(HRilClient client, DhaSolMode mode, DhaSolSelect select, char
 #endif
 
 #ifndef TUNA_RIL_STRIP
+
+/**
+ * Get mute state.
+ */
+extern "C"
+int GetMute(HRilClient client, RilOnComplete handler) {
+    RilClientPrv *client_prv;
+    int ret;
+    char data[4] = {0,};
+
+    if (client == NULL || client->prv == NULL) {
+        ALOGE("%s: Invalid client %p", __FUNCTION__, client);
+        return RIL_CLIENT_ERR_INVAL;
+    }
+
+    client_prv = (RilClientPrv *)(client->prv);
+
+    if (client_prv->sock < 0 ) {
+        ALOGE("%s: Not connected.", __FUNCTION__);
+        return RIL_CLIENT_ERR_CONNECT;
+    }
+
+    client_prv->b_del_handler = 1;
+
+    // Make raw data
+    data[0] = OEM_FUNC_SOUND;
+    data[1] = OEM_SND_GET_MUTE;
+    data[2] = 0x00; // data length
+    data[3] = 0x04; // data length
+
+    RegisterRequestCompleteHandler(client, REQ_GET_CALL_MUTE, handler);
+
+    ret = SendOemRequestHookRaw(client, REQ_GET_CALL_MUTE, data, sizeof(data));
+    if (ret != RIL_CLIENT_ERR_SUCCESS) {
+        RegisterRequestCompleteHandler(client, REQ_GET_CALL_MUTE, NULL);
+    }
+
+    return ret;
+}
+
+/**
+ * Set mute or unmute.
+ */
+extern "C"
+int SetMute(HRilClient client, MuteCondition condition) {
+    RilClientPrv *client_prv;
+    int ret;
+    char data[5] = {0,};
+
+    if (client == NULL || client->prv == NULL) {
+        ALOGE("%s: Invalid client %p", __FUNCTION__, client);
+        return RIL_CLIENT_ERR_INVAL;
+    }
+
+    client_prv = (RilClientPrv *)(client->prv);
+
+    if (client_prv->sock < 0 ) {
+        ALOGE("%s: Not connected.", __FUNCTION__);
+        return RIL_CLIENT_ERR_CONNECT;
+    }
+
+    if (isValidMuteCondition(condition) == false) {
+        ALOGE("%s: Invalid sound clock condition", __FUNCTION__);
+        return RIL_CLIENT_ERR_INVAL;
+    }
+
+    // Make raw data
+    data[0] = OEM_FUNC_SOUND;
+    data[1] = OEM_SND_SET_MUTE;
+    data[2] = 0x00; // data length
+    data[3] = 0x05; // data length
+    data[4] = condition;
+
+    RegisterRequestCompleteHandler(client, REQ_SET_CALL_MUTE, NULL);
+
+    ret = SendOemRequestHookRaw(client, REQ_SET_CALL_MUTE, data, sizeof(data));
+    if (ret != RIL_CLIENT_ERR_SUCCESS) {
+        RegisterRequestCompleteHandler(client, REQ_SET_CALL_MUTE, NULL);
+    }
+
+    return ret;
+}
+
 /**
  * Set modem clock to master or slave.
  */
@@ -1196,11 +1197,11 @@ static bool isValidAudioPath(AudioPath path) {
     return (path >= SOUND_AUDIO_PATH_HANDSET && path <= OEM_SND_AUDIO_PATH_BT_WB_NSEC_OFF);
 }
 
+#ifndef TUNA_RIL_STRIP
 static bool isValidMuteCondition(MuteCondition condition) {
     return (condition >= TX_UNMUTE && condition <= RXTX_MUTE);
 }
 
-#ifndef TUNA_RIL_STRIP
 static bool isValidSoundClockCondition(SoundClockCondition condition) {
     return (condition >= SOUND_CLOCK_STOP && condition <= SOUND_CLOCK_START);
 }

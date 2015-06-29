@@ -267,16 +267,6 @@ int SetCallAudioPath(HRilClient client, AudioPath path);
 int SetCallAudioPath(HRilClient client, AudioPath path, ExtraVolume mode);
 #endif
 
-/**
- * Get mute state
- */
-int GetMute(HRilClient client, RilOnComplete handler);
-
-/**
- * Set mute or unmute
- */
-int SetMute(HRilClient client, MuteCondition condition);
-
 #ifdef TUNA_RIL
 /**
  * Check AMR-WB support
@@ -290,6 +280,16 @@ int SetDhaSolution(HRilClient client, DhaSolMode mode, DhaSolSelect select, char
 #endif
 
 #ifndef TUNA_RIL_STRIP
+/**
+ * Get mute state
+ */
+int GetMute(HRilClient client, RilOnComplete handler);
+
+/**
+ * Set mute or unmute
+ */
+int SetMute(HRilClient client, MuteCondition condition);
+
 /**
  * Set modem clock to master or slave.
  */
