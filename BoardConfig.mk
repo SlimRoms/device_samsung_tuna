@@ -16,6 +16,9 @@
 
 DEVICE_FOLDER := device/samsung/tuna
 
+# Inherit Slim specific board config
+-include device/samsung/tuna/BoardConfigSlim.mk
+
 # inherit from omap4
 -include hardware/ti/omap4/BoardConfigCommon.mk
 
