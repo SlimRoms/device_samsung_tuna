@@ -1,6 +1,6 @@
 [
  {
-   "repository": "android_kernel_samsung_tuna",
+   "repository": "SlimRoms/kernel_samsung_tuna",
    "target_path": "kernel/samsung/tuna",
    "branch": "mm6.0"
  }
