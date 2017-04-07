@@ -6,9 +6,6 @@ TARGET_BOOTANIMATION_HALF_RES := true
 # Inherit common Slim configuration
 $(call inherit-product, vendor/slim/config/common_full_phone.mk)
 
-# Enhanced NFC
-$(call inherit-product, vendor/slim/config/nfc_enhanced.mk)
-
 # Inherit AOSP device configuration
 $(call inherit-product, device/samsung/tuna/aosp_tuna.mk)
 
