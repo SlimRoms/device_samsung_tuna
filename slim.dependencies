@@ -1,8 +1,8 @@
 [
     {
-        "repository": "SlimRoms/kernel_samsung_tuna",
-        "target_path": "kernel/samsung/tuna",
-        "branch": "ng7.1"
+        "repository": "SlimRoms/kernel_ti_omap4",
+        "target_path": "kernel/ti/omap4",
+        "branch": "stable"
     },
     {
         "repository": "SlimRoms/hardware_ti_omap4",
