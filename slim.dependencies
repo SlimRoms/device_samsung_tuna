@@ -1,8 +1,8 @@
 [
  {
-   "repository": "SlimRoms/kernel_samsung_tuna",
-   "target_path": "kernel/samsung/tuna",
-   "branch": "mm6.0"
+   "repository": "SlimRoms/kernel_ti",
+   "target_path": "kernel/ti/omap4",
+   "branch": "stable"
  },
  {
    "remote": "aosp",
