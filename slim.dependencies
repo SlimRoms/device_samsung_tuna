@@ -1,6 +1,6 @@
 [
  {
-   "repository": "SlimRoms/kernel_ti",
+   "repository": "SlimRoms/kernel_ti_omap4",
    "target_path": "kernel/ti/omap4",
    "branch": "stable"
  },
